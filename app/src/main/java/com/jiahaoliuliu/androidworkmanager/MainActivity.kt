@@ -35,6 +35,9 @@ class MainActivity : ComponentActivity() {
         workManager = WorkManager.getInstance(applicationContext)
         setContent {
             AndroidWorkManagerTheme {
+                val workResult = viewModel.workId?.let { id ->
+                    workManager.getWorkInfoByIdLiveData(id).observe
+                }
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Greeting(
                         name = "Android",
@@ -52,6 +55,7 @@ class MainActivity : ComponentActivity() {
         } else {
             intent.getParcelableExtra(Intent.EXTRA_STREAM)
         } ?: return
+        viewModel.updateUncompressUri(uri)
 
         val request = OneTimeWorkRequestBuilder<PhotoCompressionWorker>()
             .setInputData(
@@ -65,6 +69,7 @@ class MainActivity : ComponentActivity() {
             ))
             .build()
 
+        viewModel.updateWorkId(request.id)
         workManager.enqueue(request)
     }
 }
