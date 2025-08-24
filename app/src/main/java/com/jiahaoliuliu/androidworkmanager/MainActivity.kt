@@ -1,5 +1,6 @@
 package com.jiahaoliuliu.androidworkmanager
 
+import android.app.ComponentCaller
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -43,6 +44,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         workManager = WorkManager.getInstance(applicationContext)
+        requestWorkCompression(intent)
         setContent {
             AndroidWorkManagerTheme {
                 val workResult = viewModel.workId?.let { id ->
@@ -69,6 +71,7 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
+                        Text("Waiting for the intent")
                         viewModel.uncompressUri?.let { uri ->
                             Text(text = "Uncompressed image: $uri")
                             AsyncImage(model = uri, contentDescription = "Uncompressed photo")
@@ -84,8 +87,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent, caller: ComponentCaller) {
+        super.onNewIntent(intent, caller)
+        requestWorkCompression(intent)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        requestWorkCompression(intent)
+    }
+
+    private fun requestWorkCompression(intent: Intent) {
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
         } else {
@@ -100,9 +112,6 @@ class MainActivity : ComponentActivity() {
                     PhotoCompressionWorker.KEY_COMPRESSION_THRESHOLD to 1024 * 20L
                 )
             )
-//            .setConstraints(Constraints(
-//                requiresStorageNotLow = true,
-//            ))
             .build()
 
         viewModel.updateWorkId(request.id)
